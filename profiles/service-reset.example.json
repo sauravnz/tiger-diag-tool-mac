@@ -1,0 +1,10 @@
+{
+  "name": "Triumph Tiger service reset placeholder",
+  "description": "Intentionally empty. Add only verified proprietary commands for your exact bike/ECU. Example variables are next_service_date={next_service_date}, distance_km={distance_km}.",
+  "protocol": "can_11_500",
+  "variables": {
+    "next_service_date": "YYYY-MM-DD",
+    "distance_km": "10000"
+  },
+  "commands": []
+}
