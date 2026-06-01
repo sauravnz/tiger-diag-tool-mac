@@ -62,7 +62,7 @@ def read_odometer(conn: Connection) -> Optional[int]:
     Read odometer value from live data.
     
     Sends query "0D 01" to CAN ID 704.
-    Response format: 704 8D 01 00 [ODO_HI] [ODO_MID] [ODO_LO] 00 00
+    Response format: 704 8D 01 00 [ODO_HI] [ODO_LO] 00 00 00
     
     Returns odometer in kilometers, or None if failed.
     """
@@ -73,9 +73,9 @@ def read_odometer(conn: Connection) -> Optional[int]:
         if not payload or len(payload) < 5:
             return None
         
-        # Response format: 8D 01 00 [ODO_HI] [ODO_MID] [ODO_LO]
+        # Response format: 8D 01 00 [ODO_HI] [ODO_LO] 00 00 00
         # Skip response header (8D 01 00)
-        odo_bytes = payload[3:6]
+        odo_bytes = payload[3:5]
         odo_km = int.from_bytes(bytes(odo_bytes), byteorder="big")
         
         return odo_km

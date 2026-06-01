@@ -256,6 +256,13 @@ class Connection:
             if not frame_bytes:
                 continue
 
+            # 11-bit CAN frames are reported as: 704 8D 01 00 ...
+            # The first token is the CAN ID, not an ISO-TP PCI byte. TigerTool's
+            # live/service data responses use these raw eight-byte frames.
+            if frame_bytes[0] > 0xFF:
+                payload.extend(frame_bytes[1:])
+                continue
+
             # Skip CAN frame header: 18 DA F1 D5
             if (len(frame_bytes) >= 4 and
                 frame_bytes[0] == 0x18 and frame_bytes[1] == 0xDA and

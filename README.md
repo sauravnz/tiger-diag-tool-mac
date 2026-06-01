@@ -1,6 +1,6 @@
 # TigerDiag v0.2.0
 
-A macOS CLI diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. Replicates TigerTool functionality using a BMDiag cable (FTDI FT232R, ELM327 v1.4) connected via USB hub.
+A macOS diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. It provides a CLI and a lightweight local browser GUI using a BMDiag cable (FTDI FT232R, ELM327 v1.4) connected via USB hub.
 
 ## Features
 
@@ -11,10 +11,13 @@ A macOS CLI diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. Replicates
 - ✅ Auto-detect BMDiag/FTDI serial ports
 - ✅ List available serial ports
 - ✅ Send raw commands to ELM327 adapter
+- ✅ Lightweight local browser GUI
+- ✅ Read odometer through the TigerTool 11-bit live-data path
+- ✅ Captured TigerTool service distance/date reset commands, guarded behind explicit GUI safety confirmations
 
 **In Development:**
 - 🔄 Live sensor data (RPM, temperature, speed, throttle, gear, fuel level)
-- 🔄 Service interval reading and reset
+- 🔄 More service interval decoding
 - 🔄 TES suspension module fault codes
 
 **Not Yet Implemented:**
@@ -46,7 +49,106 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-## Usage
+## Quick Start
+
+Use this sequence when you are at the bike.
+
+1. Plug the BMDiag cable into the bike and the Mac.
+2. Turn ignition ON. Engine does not need to be running for the basic checks.
+3. Activate the virtual environment:
+
+```bash
+cd /Users/sauravsen/github/tiger-diag-tool-mac
+source .venv/bin/activate
+```
+
+4. Check that the Mac can see the cable:
+
+```bash
+tigerdiag list-ports
+```
+
+Look for the FTDI/BMDiag port, usually similar to:
+
+```text
+/dev/cu.usbserial-ABSCDY0H  FT232R USB UART (FTDI)
+```
+
+5. Run the simplest connection diagnostic:
+
+```bash
+tigerdiag doctor --port /dev/cu.usbserial-ABSCDY0H
+```
+
+When the bike is connected and responding, you should see:
+
+```text
+Adapter: ELM327 v1.4
+Voltage: 12.xV
+Bike ECU: OK
+VIN: SMT...
+Result: Connection successful!
+```
+
+If the cable/adapter is found but the bike ECU is not responding, it will say:
+
+```text
+Bike ECU: NOT RESPONDING
+VIN: not available
+Result: Adapter connected, but the bike ECU is not responding.
+```
+
+That usually means ignition is OFF, the run/kill switch state is wrong, the OBD plug is not seated, or the wrong serial port was selected.
+
+## GUI
+
+Start the local browser GUI:
+
+```bash
+tigerdiag-gui
+```
+
+Then open the displayed local URL if the browser does not open automatically:
+
+```text
+http://127.0.0.1:8765/
+```
+
+The GUI has tabs for:
+- **ECU:** read VIN and ECU information
+- **Service:** read service data and run captured TigerTool reset commands
+- **Live:** start/stop a separate live-data capture while the engine is running
+- **Raw:** send raw commands for diagnostics
+
+When you click **Connect**, the GUI immediately captures a read-only diagnostic snapshot from the bike and stores it as in-memory JSON. The ECU and Service tabs display that cached snapshot. Switching tabs or pressing the "Show Cached..." buttons does not send more commands to the bike.
+
+To refresh the data, click **Disconnect**, then **Connect** again.
+
+Live data is separate because useful live frames require the engine to be running:
+
+1. Click **Connect** with ignition ON.
+2. Start the engine.
+3. Open the **Live** tab and click **Start Live Capture**.
+4. Watch frames update once per second.
+5. Click **Stop Live Capture** before returning to normal diagnostics.
+
+While live capture is active, raw commands are blocked. Stopping live capture restores the normal ECU diagnostic setup.
+
+Service reset is intentionally guarded. The reset buttons require:
+- the safety checkbox
+- typing `RESET`
+- a browser confirmation dialog
+
+The current reset buttons only send the exact TigerTool payloads captured for this bike:
+
+```text
+Distance reset, 10000 km: 33 64
+Date reset, captured 2027-06-01: 5C 1B 06 01 01 6E
+```
+
+For reset, the GUI closes the existing diagnostic session, opens a fresh serial connection, sends the captured TigerTool reset sequence, then closes that reset connection. Reconnect afterward to capture a fresh diagnostic snapshot.
+
+## CLI Usage
 
 ### List Available Serial Ports
 
@@ -59,6 +161,12 @@ tigerdiag list-ports
 ```bash
 tigerdiag doctor --port /dev/cu.usbserial-ABSCDY0H
 ```
+
+This is the best first command. It verifies:
+- Mac can open the serial port
+- ELM327 adapter responds
+- adapter voltage can be read
+- bike ECU responds to a VIN read
 
 ### Read VIN Only
 
@@ -79,6 +187,8 @@ tigerdiag ecu-info --port /dev/cu.usbserial-ABSCDY0H --json
 tigerdiag scan --port /dev/cu.usbserial-ABSCDY0H
 tigerdiag scan --port /dev/cu.usbserial-ABSCDY0H --json
 ```
+
+This is the simplest command for a short diagnostic report once `doctor` passes.
 
 ### Read Live Sensor Data
 
@@ -136,9 +246,9 @@ The Triumph Tiger 900 GT Pro uses ISO 15765-4 CAN with two main communication ch
 - **Transmit:** CAN ID 701
 - **Receive:** CAN ID 704 (query responses), 569 (broadcast data)
 - **Query Commands:**
-  - 0D 01: Read odometer (returns km in bytes 3-5)
+  - 0D 01: Read odometer (returns km in bytes 3-4)
   - 47 01: Read sensor frame 2 (purpose unknown)
-  - 33 64: Read sensor frame 3 (purpose unknown)
+  - 33 64: Captured TigerTool service distance reset payload, not a read command
 
 ### ISO-TP Multi-Frame Response Format
 
@@ -188,8 +298,13 @@ ATZ → ATE0 → ATH1 → ATV0 → ATL0 → ATCAF0 → ATCFC1 → ATCP18 → ATS
 
 **service_interval.py:** Service interval and instruments module support. Implements:
 - Service interval data reading
-- Service interval reset (partial - needs more reverse engineering)
+- Exact captured TigerTool reset helpers for distance/date, used only behind GUI safety confirmations
 - Instruments module communication
+
+**gui.py:** Local browser GUI. Implements:
+- Persistent connection shared by all GUI tabs
+- ECU, service, live-data, and raw-command views
+- Safety gating for captured service reset commands
 
 **ports.py:** Serial port detection for macOS. Auto-detects FTDI/ELM327 ports.
 
@@ -200,7 +315,7 @@ ATZ → ATE0 → ATH1 → ATV0 → ATL0 → ATCAF0 → ATCFC1 → ATCP18 → ATS
 
 1. **TES Suspension Fault:** The TES (Triumph Electronic Suspension) fault is stored in a separate suspension module, not the main engine ECU. The CAN address for this module has not yet been identified.
 
-2. **Service Reset:** The exact command sequence for resetting the service interval has not been fully reverse-engineered from the TigerTool capture. The capture showed the instruments module returning "NO DATA" to the session control command, suggesting the bike may have been in an incorrect state.
+2. **Service Reset:** Two successful TigerTool reset payloads have been captured and implemented as exact allowlisted commands in the GUI. Dynamic generation of arbitrary service dates/distances is not implemented yet.
 
 3. **Live Data Decoding:** The raw CAN frames from live data (704 and 569) have been partially decoded. The odometer is confirmed (0D 01 query), but other sensor values (RPM, temperature, speed, etc.) require further analysis.
 
@@ -256,7 +371,7 @@ Please open an issue or contact the maintainers.
 
 ## Disclaimer
 
-This tool communicates with your motorcycle's ECU. While it only performs read operations by default, use at your own risk. The author is not responsible for any damage to your bike or its systems.
+This tool communicates with your motorcycle's ECU. It performs read operations by default. Service reset writes are available only through exact captured TigerTool payloads and explicit GUI safety confirmations. Use at your own risk. The author is not responsible for any damage to your bike or its systems.
 
 ## License
 

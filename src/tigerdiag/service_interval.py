@@ -1,13 +1,18 @@
 """
 Service interval and instruments module support for Triumph Tiger bikes.
 
-Reads and resets service interval data via the instruments module at CAN header DA C1 F1.
+Reads service interval data via the instruments module at CAN header DA C1 F1.
 """
 
 from dataclasses import dataclass
 from typing import Optional
 
 from .connection import Connection, NoDataError
+from .live_data import read_odometer, setup_live_data_session
+
+
+SERVICE_RESET_DISTANCE_10000KM_COMMAND = "33 64"
+SERVICE_RESET_DATE_2027_06_01_COMMAND = "5C 1B 06 01 01 6E"
 
 
 @dataclass
@@ -78,76 +83,110 @@ def read_service_interval(conn: Connection) -> ServiceIntervalData:
             conn.set_header("DA D5 F1")
         except Exception:
             pass
+
+    if data.current_odometer_km is None:
+        # Gen2 Tiger 900 TFT instruments expose odometer/service data on the
+        # 11-bit live-data path used by TigerTool. This is read-only.
+        try:
+            if setup_live_data_session(conn):
+                data.current_odometer_km = read_odometer(conn)
+        except Exception as e:
+            print(f"Error reading service odometer: {e}")
+        finally:
+            try:
+                conn.initialize()
+            except Exception:
+                pass
     
     return data
 
 
+def _log_command(log, direction: str, text: str):
+    if log:
+        log(f"{direction} {text}")
+
+
+def _send_logged(conn: Connection, command: str, log=None, pause: float = 0.3) -> str:
+    _log_command(log, ">>>", command)
+    response = conn.send(command, pause=pause)
+    _log_command(log, "<<<", response or "(empty)")
+    return response
+
+
+def setup_captured_service_reset_session(conn: Connection, log=None) -> None:
+    """
+    Configure the ELM327 exactly like TigerTool before captured service reset writes.
+
+    This uses the 11-bit CAN path captured on a 2021 Tiger 900 GT Pro:
+    transmit 701, receive 704, long timeout while waiting for reset acknowledgement.
+    """
+    _send_logged(conn, "AT WS", log, pause=1.0)
+    _send_logged(conn, "AT TP6", log)
+    _send_logged(conn, "AT E0", log)
+    _send_logged(conn, "AT H1", log)
+    _send_logged(conn, "AT L0", log)
+    _send_logged(conn, "AT CFC0", log)
+    _send_logged(conn, "AT CAF0", log)
+    _send_logged(conn, "AT SH701", log)
+    _send_logged(conn, "AT CRA704", log)
+    _send_logged(conn, "AT ST7F", log)
+
+
+def restore_captured_service_timeout(conn: Connection, log=None) -> None:
+    """Restore TigerTool's normal timeout after a captured service reset write."""
+    _send_logged(conn, "AT ST32", log)
+
+
+def reset_service_distance_10000km_captured(conn: Connection, log=None) -> bool:
+    """
+    Reset service distance using the exact 10,000 km TigerTool capture.
+
+    This is intentionally not configurable. It sends only the allowlisted payload
+    captured from TigerTool for this bike.
+    """
+    setup_captured_service_reset_session(conn, log)
+    try:
+        response = _send_logged(
+            conn,
+            SERVICE_RESET_DISTANCE_10000KM_COMMAND,
+            log,
+            pause=1.5,
+        )
+        return "B3 64" in response.upper()
+    finally:
+        restore_captured_service_timeout(conn, log)
+
+
+def reset_service_date_2027_06_01_captured(conn: Connection, log=None) -> bool:
+    """
+    Reset service date using the exact TigerTool capture.
+
+    Captured payload: 5C 1B 06 01 01 6E, acknowledged by
+    704 DC 1B 06 01 01 6E 00 00.
+    """
+    setup_captured_service_reset_session(conn, log)
+    try:
+        response = _send_logged(
+            conn,
+            SERVICE_RESET_DATE_2027_06_01_COMMAND,
+            log,
+            pause=1.5,
+        )
+        return "DC 1B 06 01 01 6E" in response.upper()
+    finally:
+        restore_captured_service_timeout(conn, log)
+
+
 def reset_service_interval(conn: Connection, new_interval_km: int) -> bool:
     """
-    Reset service interval on the instruments module.
-    
-    Uses CAN header DA C1 F1 and UDS Service 2E (Write Data By Identifier).
-    
-    Args:
-        conn: Connection to bike
-        new_interval_km: New service interval in kilometers (must be multiple of 100)
-    
-    Returns:
-        True if reset successful, False otherwise.
-    
-    Note: This is a destructive operation. The actual command sequence from TigerTool
-    is not yet fully reverse-engineered from the capture. This is a placeholder
-    implementation that attempts the most likely approach.
+    Generic service reset is intentionally disabled.
+
+    The captured TigerTool reset helpers above send exact allowlisted payloads for
+    this bike. This generic entry point remains a hard stop so callers cannot invent
+    or vary write commands without a matching capture.
     """
-    if new_interval_km % 100 != 0:
-        print("Error: Service interval must be a multiple of 100 km")
-        return False
-    
-    try:
-        # Switch to instruments module header
-        conn.set_header("DA C1 F1")
-        
-        # Try to enter extended diagnostic session (may be required)
-        try:
-            response = conn.send("02 10 03", pause=0.5)
-            print(f"Diagnostic session response: {response}")
-        except NoDataError:
-            print("Warning: Instruments module did not respond to session control")
-            # Continue anyway - the module may not require this
-        
-        # Attempt to write service interval using UDS Service 2E
-        # Format: 2E [DID_HI] [DID_LO] [DATA...]
-        # This is speculative - the actual DID and data format are unknown
-        
-        interval_bytes = new_interval_km.to_bytes(2, byteorder="big")
-        command = f"04 2E F1 B0 {interval_bytes[0]:02X} {interval_bytes[1]:02X}"
-        
-        try:
-            response = conn.send(command, pause=0.5)
-            print(f"Service interval write response: {response}")
-            
-            # Check if response indicates success (6E = positive response to 2E)
-            if "6E" in response.upper():
-                print("Service interval reset successful")
-                return True
-            else:
-                print("Service interval reset may have failed - check response")
-                return False
-        
-        except NoDataError:
-            print("Error: Instruments module did not respond to write command")
-            return False
-    
-    except Exception as e:
-        print(f"Error resetting service interval: {e}")
-        return False
-    
-    finally:
-        # Restore ECU read header
-        try:
-            conn.set_header("DA D5 F1")
-        except Exception:
-            pass
+    print("Generic service reset is disabled; use an exact captured TigerTool reset helper.")
+    return False
 
 
 def format_service_interval(data: ServiceIntervalData) -> str:

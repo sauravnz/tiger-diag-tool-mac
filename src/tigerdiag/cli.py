@@ -137,12 +137,17 @@ def cmd_doctor(port: Optional[str]):
             # Try to read VIN as ECU probe
             vin = conn.read_did_ascii("F190")
             if vin:
-                print(f"  ECU probe: OK")
+                print("  Bike ECU: OK")
                 print(f"  VIN: {vin}")
+                print()
+                print("Result: Connection successful!")
             else:
-                print(f"  ECU probe: no response to VIN read")
-            print()
-            print("Result: Connection successful!")
+                print("  Bike ECU: NOT RESPONDING")
+                print("  VIN: not available")
+                print()
+                print("Result: Adapter connected, but the bike ECU is not responding.")
+                print("        Check ignition is ON, kill switch/run switch, cable seating, and the selected port.")
+                sys.exit(2)
 
     except ConnectionError as e:
         print(f"  Connection FAILED: {e}")

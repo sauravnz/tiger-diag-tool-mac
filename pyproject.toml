@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 tigerdiag = "tigerdiag.cli:main"
+tigerdiag-gui = "tigerdiag.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
