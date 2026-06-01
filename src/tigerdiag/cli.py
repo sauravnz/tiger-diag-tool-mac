@@ -270,7 +270,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 def cmd_scan(args: argparse.Namespace) -> int:
     with connect_auto(args.port, args.baud, args.protocol, timeout=args.timeout) as elm:
-        report = scan_bike(elm, include_snapshot=args.snapshot, include_freeze_frame=args.freeze_frame)
+        # Include snapshot by default unless explicitly disabled
+        include_snapshot = args.snapshot if hasattr(args, 'snapshot') and args.snapshot is False else True
+        report = scan_bike(elm, include_snapshot=include_snapshot, include_freeze_frame=args.freeze_frame)
         if args.json:
             print(json.dumps(scan_report_to_dict(report), indent=2))
             return 0
