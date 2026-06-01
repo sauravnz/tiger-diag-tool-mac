@@ -1,0 +1,52 @@
+{
+  "ports": [
+    {
+      "device": "/dev/cu.usbserial-ABSCDY0H",
+      "description": "FT232R USB UART",
+      "hwid": "USB VID:PID=0403:6001 SER=ABSCDY0H LOCATION=1-1.1",
+      "score": 20,
+      "likely": true
+    },
+    {
+      "device": "/dev/cu.wlan-debug",
+      "description": "n/a",
+      "hwid": "n/a",
+      "score": 0,
+      "likely": false
+    },
+    {
+      "device": "/dev/cu.JabraEvolve65SE",
+      "description": "n/a",
+      "hwid": "n/a",
+      "score": 0,
+      "likely": false
+    },
+    {
+      "device": "/dev/cu.debug-console",
+      "description": "n/a",
+      "hwid": "n/a",
+      "score": -50,
+      "likely": false
+    },
+    {
+      "device": "/dev/cu.Bluetooth-Incoming-Port",
+      "description": "n/a",
+      "hwid": "n/a",
+      "score": -50,
+      "likely": false
+    }
+  ],
+  "selected_port": "/dev/cu.usbserial-ABSCDY0H",
+  "selected_baud": 38400,
+  "adapter": {
+    "identity": "ELM327 V1.4",
+    "voltage": "15.0V",
+    "protocol": "AUTO"
+  },
+  "adapter_ok": true,
+  "ecu_ok": true,
+  "ecu_error": null,
+  "notes": [
+    "Adapter and ECU both responded. Standard scan should work from this port/baud/protocol."
+  ]
+}

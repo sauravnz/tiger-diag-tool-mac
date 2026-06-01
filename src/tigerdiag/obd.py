@@ -8,6 +8,7 @@ from .dtc import Dtc, decode_dtc_bytes
 from .elm327 import Elm327, ElmError, ElmNoData
 from .isotp import reassemble_isotp_payloads
 from .pids import FreezeFrameReport, PidReading, freeze_frame_to_dict, read_freeze_frame, read_snapshot, snapshot_to_dict
+from .uds_service22 import read_vin_uds, read_ecu_info
 
 
 HEX_PAIR = re.compile(r"\b[0-9A-F]{2}\b")
@@ -117,6 +118,15 @@ def scan_report_to_dict(report: ScanReport) -> dict:
 
 
 def read_vin(elm: Elm327) -> Optional[str]:
+    # Try UDS Service 22 first (works for Triumph bikes)
+    try:
+        vin = read_vin_uds(elm)
+        if vin:
+            return vin
+    except Exception:
+        pass
+    
+    # Fallback to standard OBD Mode 09 PID 02
     try:
         lines = elm.command("0902")
     except ElmNoData:
@@ -179,3 +189,19 @@ def hex_bytes(line: str) -> List[int]:
     for token in HEX_PAIR.findall(line.upper()):
         values.append(int(token, 16))
     return values
+
+
+def read_ecu_information(elm: Elm327) -> Dict[str, Optional[str]]:
+    """
+    Read complete ECU information using UDS Service 22.
+    
+    Args:
+        elm: ELM327 adapter instance
+    
+    Returns:
+        Dictionary with ECU information (VIN, type, serial, tune info, etc.)
+    """
+    try:
+        return read_ecu_info(elm)
+    except Exception:
+        return {}
