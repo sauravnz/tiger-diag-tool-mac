@@ -1,4 +1,9 @@
-from __future__ import annotations
+"""
+ELM327 adapter communication module.
+
+Handles serial communication with ELM327 OBD adapters, with specific
+support for Triumph bikes using CAN protocol.
+"""
 
 import glob
 import re
@@ -84,6 +89,8 @@ def score_port(port: SerialCandidate) -> int:
 
 
 class Elm327:
+    """ELM327 OBD adapter communication."""
+
     def __init__(self, port: str, baudrate: int = 38400, timeout: float = 2.0):
         require_pyserial()
         self.port = port
@@ -107,24 +114,34 @@ class Elm327:
         self.close()
 
     def initialize(self, protocol: str = "auto") -> None:
+        """Initialize ELM327 adapter with Triumph bike settings."""
         if protocol not in PROTOCOLS:
             names = ", ".join(sorted(PROTOCOLS))
             raise ElmError(f"Unknown protocol '{protocol}'. Choose one of: {names}")
 
+        # Reset adapter
         self.command("ATZ", pause=1.0, tolerate_no_data=True)
+        
+        # Basic settings
         for cmd in (
-            "ATD",
-            "ATE0",
-            "ATL0",
-            "ATS0",
-            "ATH0",
-            "ATCAF1",
-            "ATAT1",
-            f"ATSP{PROTOCOLS[protocol]}",
+            "ATE0",      # Echo off
+            "ATL0",      # Linefeeds off
+            "ATS0",      # Spaces off
+            "ATH0",      # Headers off (will enable later for CAN)
+        ):
+            self.command(cmd, tolerate_no_data=True)
+        
+        # CAN-specific settings for Triumph bikes
+        for cmd in (
+            "ATCAF0",    # CAN Auto Format OFF (required for Triumph)
+            "ATCFC1",    # CAN Flow Control ON (CRITICAL for multi-frame responses)
+            f"ATSP{PROTOCOLS[protocol]}",  # Set protocol
+            "ATAT1",     # Adaptive timing on
         ):
             self.command(cmd, tolerate_no_data=True)
 
     def command(self, command: str, pause: float = 0.05, tolerate_no_data: bool = False) -> List[str]:
+        """Send a command to the ELM327 and get response."""
         clean = command.strip()
         if not clean:
             return []
@@ -144,13 +161,16 @@ class Elm327:
         return [line for line in lines if not is_status_or_error(line)]
 
     def set_header(self, header: str) -> None:
+        """Set CAN message header."""
         clean = normalise_header(header)
         self.command(f"ATSH{clean}", tolerate_no_data=True)
 
     def show_headers(self, enabled: bool) -> None:
+        """Enable/disable CAN header display."""
         self.command("ATH1" if enabled else "ATH0", tolerate_no_data=True)
 
     def _read_until_prompt(self) -> str:
+        """Read from serial until we get the ELM327 prompt (>)."""
         deadline = time.monotonic() + self.timeout
         data = bytearray()
         while time.monotonic() < deadline:
@@ -172,6 +192,7 @@ def connect_auto(
     timeout: float = 2.0,
     require_ecu: bool = True,
 ) -> Elm327:
+    """Auto-detect and connect to ELM327 adapter."""
     candidates = list_serial_candidates()
     ports = [port] if port else [candidate.device for candidate in candidates if score_port(candidate) > 0]
     if not ports:
@@ -204,35 +225,32 @@ def connect_auto(
 
 
 def normalise_elm_lines(raw: str, echo: str = "") -> List[str]:
+    """Normalize ELM327 response into clean lines."""
     text = raw.replace("\r", "\n").replace(">", "\n")
     lines = []
     for line in text.splitlines():
         item = line.strip()
-        if not item:
-            continue
-        if echo and item.upper() == echo.upper():
-            continue
-        lines.append(re.sub(r"\s+", " ", item).upper())
+        if item and item != echo:
+            lines.append(item)
     return lines
 
 
 def normalise_header(header: str) -> str:
-    clean = re.sub(r"[^0-9A-Fa-f]", "", header).upper()
-    if len(clean) not in {3, 6, 8}:
-        raise ElmError("CAN/K-line header must be 3, 6, or 8 hex characters")
-    return clean
+    """Normalize CAN header format."""
+    return header.replace(" ", "").upper()
 
 
 def is_status_or_error(line: str) -> bool:
-    if line in {"OK", "NO DATA", "?", "STOPPED", "UNABLE TO CONNECT", "BUS INIT: ERROR"}:
-        return True
-    if line.startswith("SEARCHING"):
-        return True
-    return False
+    """Check if line is a status message or error."""
+    return line.upper() in ("OK", "?") or line.startswith("UNABLE")
 
 
 def first_error_line(lines: Iterable[str]) -> Optional[str]:
+    """Find first error line in response."""
     for line in lines:
-        if line in {"NO DATA", "?", "STOPPED", "UNABLE TO CONNECT", "BUS INIT: ERROR"}:
-            return line
+        upper = line.upper()
+        if upper in ("NO DATA", "ERROR", "?"):
+            return upper
+        if upper.startswith("ERROR"):
+            return upper
     return None

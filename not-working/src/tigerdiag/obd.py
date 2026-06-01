@@ -1,3 +1,7 @@
+"""
+OBD-II and UDS diagnostic functions for Triumph bikes.
+"""
+
 from __future__ import annotations
 
 import re
@@ -8,8 +12,7 @@ from .dtc import Dtc, decode_dtc_bytes
 from .elm327 import Elm327, ElmError, ElmNoData
 from .isotp import reassemble_isotp_payloads
 from .pids import FreezeFrameReport, PidReading, freeze_frame_to_dict, read_freeze_frame, read_snapshot, snapshot_to_dict
-from .uds_service22 import read_vin_uds, read_ecu_info
-
+from .uds_service22 import read_vin_uds
 
 HEX_PAIR = re.compile(r"\b[0-9A-F]{2}\b")
 
@@ -52,6 +55,10 @@ def adapter_info(elm: Elm327) -> Dict[str, str]:
 
 
 def scan(elm: Elm327, include_snapshot: bool = False, include_freeze_frame: bool = False) -> ScanReport:
+    """Perform a complete diagnostic scan."""
+    # Setup CAN for Triumph bikes (do this ONCE at the start)
+    _setup_can_for_triumph(elm)
+    
     return ScanReport(
         adapter=adapter_info(elm),
         vin=read_vin(elm),
@@ -64,6 +71,15 @@ def scan(elm: Elm327, include_snapshot: bool = False, include_freeze_frame: bool
         snapshot=read_snapshot(elm) if include_snapshot else [],
         freeze_frame=read_freeze_frame(elm) if include_freeze_frame else None,
     )
+
+
+def _setup_can_for_triumph(elm: Elm327) -> None:
+    """Setup CAN protocol for Triumph bikes."""
+    elm.command("ATCAF0", tolerate_no_data=True)    # CAN Auto Format OFF
+    elm.command("ATCFC1", tolerate_no_data=True)    # CAN Flow Control ON
+    elm.command("ATCP18", tolerate_no_data=True)    # CAN Protocol 18
+    elm.command("ATTP7", tolerate_no_data=True)     # Timeout Parameter 7
+    elm.command("ATH1", tolerate_no_data=True)      # Headers ON
 
 
 def read_mil_status(elm: Elm327) -> Optional[MilStatus]:
@@ -118,6 +134,7 @@ def scan_report_to_dict(report: ScanReport) -> dict:
 
 
 def read_vin(elm: Elm327) -> Optional[str]:
+    """Read VIN from bike ECU."""
     # Try UDS Service 22 first (works for Triumph bikes)
     try:
         vin = read_vin_uds(elm)
@@ -189,19 +206,3 @@ def hex_bytes(line: str) -> List[int]:
     for token in HEX_PAIR.findall(line.upper()):
         values.append(int(token, 16))
     return values
-
-
-def read_ecu_information(elm: Elm327) -> Dict[str, Optional[str]]:
-    """
-    Read complete ECU information using UDS Service 22.
-    
-    Args:
-        elm: ELM327 adapter instance
-    
-    Returns:
-        Dictionary with ECU information (VIN, type, serial, tune info, etc.)
-    """
-    try:
-        return read_ecu_info(elm)
-    except Exception:
-        return {}

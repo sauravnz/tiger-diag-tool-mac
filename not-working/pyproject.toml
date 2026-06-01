@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tigerdiag"
-version = "0.2.0"
-description = "Mac diagnostic CLI for Triumph Tiger motorcycles (Tiger 900 GT Pro)"
+version = "0.1.0"
+description = "Mac-friendly ELM327 diagnostic CLI for Triumph Tiger motorcycles"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -17,3 +17,4 @@ tigerdiag = "tigerdiag.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
