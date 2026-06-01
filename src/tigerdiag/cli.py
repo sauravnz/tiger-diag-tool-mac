@@ -17,6 +17,8 @@ from typing import Optional
 
 from .connection import Connection, ConnectionError, NoDataError
 from .diagnostics import read_ecu_info, read_calibration_id, run_full_diagnostic
+from .live_data import read_live_data, format_live_data, setup_live_data_session
+from .service_interval import read_service_interval, format_service_interval
 from .ports import find_likely_port, list_ports
 
 
@@ -53,6 +55,15 @@ def main():
     sp_raw.add_argument("--port", help="Serial port path")
     sp_raw.add_argument("command_str", metavar="COMMAND", help="Command to send")
 
+    # live
+    sp_live = subparsers.add_parser("live", help="Read live sensor data")
+    sp_live.add_argument("--port", help="Serial port path")
+    sp_live.add_argument("--duration", type=float, default=5.0, help="Duration in seconds (default: 5.0)")
+
+    # service
+    sp_service = subparsers.add_parser("service", help="Read service interval data")
+    sp_service.add_argument("--port", help="Serial port path")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -71,6 +82,10 @@ def main():
         cmd_ecu_info(args.port, args.json)
     elif args.command == "raw":
         cmd_raw(args.port, args.command_str)
+    elif args.command == "live":
+        cmd_live(args.port, args.duration)
+    elif args.command == "service":
+        cmd_service(args.port)
 
 
 def _resolve_port(port: Optional[str]) -> str:
@@ -222,6 +237,62 @@ def cmd_raw(port: Optional[str], command_str: str):
                 print(response)
             except NoDataError:
                 print(f"no data")
+
+    except ConnectionError as e:
+        print(f"error: {e}")
+        sys.exit(1)
+
+
+def cmd_live(port: Optional[str], duration: float):
+    """Read live sensor data."""
+    port = _resolve_port(port)
+
+    print("TigerDiag Live Data")
+    print("=" * 40)
+    print()
+
+    try:
+        with Connection(port) as conn:
+            conn.initialize()
+            print(f"Reading live data for {duration} seconds...")
+            print()
+
+            frames = read_live_data(conn, duration_seconds=duration)
+
+            if not frames:
+                print("No data received")
+                return
+
+            print(f"Received {len(frames)} frames:")
+            print()
+
+            for i, frame in enumerate(frames, 1):
+                print(f"Frame {i}:")
+                print(format_live_data(frame))
+                print()
+
+    except ConnectionError as e:
+        print(f"error: {e}")
+        sys.exit(1)
+
+
+def cmd_service(port: Optional[str]):
+    """Read service interval data."""
+    port = _resolve_port(port)
+
+    print("TigerDiag Service Interval")
+    print("=" * 40)
+    print()
+
+    try:
+        with Connection(port) as conn:
+            conn.initialize()
+            print("Reading service interval data...")
+            print()
+
+            data = read_service_interval(conn)
+            print(format_service_interval(data))
+            print()
 
     except ConnectionError as e:
         print(f"error: {e}")
