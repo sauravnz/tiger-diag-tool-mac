@@ -46,6 +46,22 @@ TigerDiag v1.0.0 is the first working MVP for macOS. It provides:
 
 ![TigerDiag guarded service reset](images/tigerdiag-2.png)
 
+### CLI List Ports
+
+![TigerDiag CLI list ports](images/tigerdiag-list-ports.png)
+
+### CLI Doctor
+
+![TigerDiag CLI doctor](images/tigerdiag-doctor.png)
+
+### CLI ECU Info
+
+![TigerDiag CLI ECU info](images/tigerdiag-ecu-info.png)
+
+### CLI Scan
+
+![TigerDiag CLI scan](images/tigerdiag-scan.png)
+
 ## Installation
 
 ### Requirements
@@ -79,7 +95,7 @@ Use this sequence when you are at the bike.
 3. Activate the virtual environment:
 
 ```bash
-cd /Users/sauravsen/github/tiger-diag-tool-mac
+cd tiger-diag-tool-mac
 source .venv/bin/activate
 ```
 
@@ -92,13 +108,13 @@ tigerdiag list-ports
 Look for the FTDI/BMDiag port, usually similar to:
 
 ```text
-/dev/cu.usbserial-ABSCDY0H  FT232R USB UART (FTDI)
+/dev/cu.usbserial-XXXX  FT232R USB UART (FTDI)
 ```
 
 5. Run the simplest connection diagnostic:
 
 ```bash
-tigerdiag doctor --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag doctor --port /dev/cu.usbserial-XXXX
 ```
 
 When the bike is connected and responding, you should see:
@@ -184,7 +200,7 @@ tigerdiag list-ports
 ### Check Connection Health
 
 ```bash
-tigerdiag doctor --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag doctor --port /dev/cu.usbserial-XXXX
 ```
 
 This is the best first command. It verifies:
@@ -196,21 +212,21 @@ This is the best first command. It verifies:
 ### Read VIN Only
 
 ```bash
-tigerdiag vin --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag vin --port /dev/cu.usbserial-XXXX
 ```
 
 ### Read ECU Information
 
 ```bash
-tigerdiag ecu-info --port /dev/cu.usbserial-ABSCDY0H
-tigerdiag ecu-info --port /dev/cu.usbserial-ABSCDY0H --json
+tigerdiag ecu-info --port /dev/cu.usbserial-XXXX
+tigerdiag ecu-info --port /dev/cu.usbserial-XXXX --json
 ```
 
 ### Full Diagnostic Scan
 
 ```bash
-tigerdiag scan --port /dev/cu.usbserial-ABSCDY0H
-tigerdiag scan --port /dev/cu.usbserial-ABSCDY0H --json
+tigerdiag scan --port /dev/cu.usbserial-XXXX
+tigerdiag scan --port /dev/cu.usbserial-XXXX --json
 ```
 
 This is the simplest command for a short diagnostic report once `doctor` passes.
@@ -218,13 +234,13 @@ This is the simplest command for a short diagnostic report once `doctor` passes.
 ### Read Live Sensor Data
 
 ```bash
-tigerdiag live --port /dev/cu.usbserial-ABSCDY0H --duration 10
+tigerdiag live --port /dev/cu.usbserial-XXXX --duration 10
 ```
 
 ### Read Service Interval Data
 
 ```bash
-tigerdiag service --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag service --port /dev/cu.usbserial-XXXX
 ```
 
 ### CLI Screenshot Commands
@@ -240,19 +256,19 @@ tigerdiag list-ports
 ```bash
 # Show adapter voltage, ECU reachability, and VIN
 clear
-tigerdiag doctor --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag doctor --port /dev/cu.usbserial-XXXX
 ```
 
 ```bash
 # Show VIN, ECU serial, calibration, tune, software, and voltage
 clear
-tigerdiag ecu-info --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag ecu-info --port /dev/cu.usbserial-XXXX
 ```
 
 ```bash
 # Show the short all-in-one diagnostic report
 clear
-tigerdiag scan --port /dev/cu.usbserial-ABSCDY0H
+tigerdiag scan --port /dev/cu.usbserial-XXXX
 ```
 
 ## Technical Details
@@ -376,13 +392,13 @@ Three standalone test scripts are provided for development:
 
 ```bash
 # Test VIN reading with persistent connection
-python3 test_vin_read.py /dev/cu.usbserial-ABSCDY0H
+python3 test_vin_read.py /dev/cu.usbserial-XXXX
 
 # Test live data reading
-python3 test_live_data.py /dev/cu.usbserial-ABSCDY0H
+python3 test_live_data.py /dev/cu.usbserial-XXXX
 
 # Passive CAN bus scanning
-python3 test_can_scan.py /dev/cu.usbserial-ABSCDY0H 10
+python3 test_can_scan.py /dev/cu.usbserial-XXXX 10
 ```
 
 ## Contributing

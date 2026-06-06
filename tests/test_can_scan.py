@@ -17,7 +17,7 @@ from collections import defaultdict
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 test_can_scan.py <port> [duration_seconds]")
-        print("Example: python3 test_can_scan.py /dev/cu.usbserial-ABSCDY0H 10")
+        print("Example: python3 test_can_scan.py /dev/cu.usbserial-XXXX 10")
         sys.exit(1)
 
     port = sys.argv[1]

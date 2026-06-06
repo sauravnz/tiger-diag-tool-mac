@@ -33,7 +33,7 @@ def send_command(ser, command, pause=0.1):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 test_vin_read.py <port>")
-        print("Example: python3 test_vin_read.py /dev/cu.usbserial-ABSCDY0H")
+        print("Example: python3 test_vin_read.py /dev/cu.usbserial-XXXX")
         sys.exit(1)
     
     port = sys.argv[1]

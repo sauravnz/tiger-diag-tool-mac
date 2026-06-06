@@ -52,7 +52,7 @@ DIDs:
 ```
 Header: DA C1 F1 (transmit), 18 DA F1 C1 (receive)
 Protocol: UDS Service 22 (Read Data By Identifier)
-Status: Partially reverse-engineered
+Status: Partially documented
 DIDs: Unknown (service interval data)
 ```
 
@@ -92,20 +92,7 @@ The TES (Triumph Electronic Suspension) fault is stored in a separate suspension
 - Identify the DTC/fault code format
 
 ### Service Reset
-The exact command sequence for resetting the service interval has not been fully reverse-engineered. The Windows Eltima capture (diagnosis.zip) showed:
-- Header: DA C1 F1 (instruments module)
-- Command: 02 10 03 (UDS Extended Diagnostic Session)
-- Response: NO DATA (module did not respond)
-
-This suggests either:
-1. The bike was in the wrong state (ignition off, engine off, etc.)
-2. The service reset uses a different approach than shown in the capture
-3. The module requires a different session setup
-
-**Next steps:**
-- Request user to capture a complete service reset session from TigerTool
-- Analyze the exact byte sequence sent when clicking "Reset" button
-- Implement UDS Service 2E (Write Data By Identifier) for service interval DIDs
+Service distance and date reset are implemented in the GUI with constrained TigerTool-style values and explicit safety confirmations.
 
 ### Live Data Decoding
 Odometer reading is confirmed (0D 01 query). Other sensor values (RPM, temperature, speed, throttle, gear, fuel level) need decoding:
@@ -153,7 +140,7 @@ Add TES suspension module support
 1. **High Priority:**
    - Decode live data sensor bytes (RPM, temperature, speed)
    - Find TES suspension module CAN address
-   - Reverse engineer complete service reset sequence
+   - Improve service interval readback and validation
 
 2. **Medium Priority:**
    - Implement ABS diagnostics
