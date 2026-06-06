@@ -4,6 +4,8 @@
 
 TigerDiag is an open-source diagnostic interoperability project for macOS. It communicates with a Triumph Tiger motorcycle ECU through a BMDiag diagnostic cable using an FTDI FT232R / ELM327 v1.4 serial adapter.
 
+TigerDiag is an independent, ground-up Python project inspired by TigerTool and the Triumph Tiger community. It does not include TigerTool source code, TigerTool binaries, or bundled TigerTool assets, and it is not affiliated with T800XC, TigerTool, Triumph, or BMDiag.
+
 Canonical repository: https://github.com/sauravnz/tiger-diag-tool-mac
 
 ## Project Status
@@ -27,8 +29,8 @@ TigerDiag v1.0.0 is the first working MVP release. It provides read-only diagnos
 - VIN and ECU information reads
 - full diagnostic scan summary
 - cached diagnostic snapshot in the GUI after connect
-- service distance reset with constrained kilometre options
-- service date reset with constrained day options
+- TigerTool-compatible service distance reset with constrained kilometre options
+- TigerTool-compatible service date reset with constrained day options
 - explicit reset safety checkbox, typed confirmation, browser confirmation, and command preview
 - separate start/stop live-data capture workflow
 - arbitrary raw-command UI and CLI entry points intentionally removed for safety
@@ -94,4 +96,4 @@ TigerDiag communicates with motorcycle control modules. Read-only diagnostics ar
 
 ## Useful Search Terms
 
-TigerDiag, Triumph Tiger diagnostic tool, Triumph Tiger 900 GT Pro diagnostics, macOS motorcycle diagnostics, BMDiag cable, FTDI FT232R, ELM327, TigerTool-style service reset, Triumph ECU diagnostics, Tiger 900 service reset.
+TigerDiag, Triumph Tiger diagnostic tool, Triumph Tiger 900 GT Pro diagnostics, macOS motorcycle diagnostics, BMDiag cable, FTDI FT232R, ELM327, independent TigerTool-inspired diagnostic tool, TigerTool-compatible service reset, Triumph ECU diagnostics, Tiger 900 service reset.

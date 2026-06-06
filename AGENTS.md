@@ -4,9 +4,9 @@ This document provides guidance for future AI agents working on the TigerDiag pr
 
 ## Project Overview
 
-TigerDiag is a macOS CLI diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. It replicates TigerTool functionality by communicating with the bike's ECU via a BMDiag cable (FTDI FT232R, ELM327 v1.4) connected to a USB hub.
+TigerDiag is a macOS CLI diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. It is an independent, ground-up Python project inspired by TigerTool and communicates with the bike's ECU via a BMDiag cable (FTDI FT232R, ELM327 v1.4) connected to a USB hub.
 
-**Current Status:** v0.2.0 - Persistent connection architecture working, VIN/ECU info reading confirmed, live data and service interval modules implemented.
+**Current Status:** v1.0.0 - Persistent connection architecture working, VIN/ECU info reading confirmed, GUI implemented, and guarded service distance/date reset confirmed.
 
 ## Critical Architecture Decision
 

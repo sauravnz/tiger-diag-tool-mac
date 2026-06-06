@@ -202,7 +202,7 @@ HTML_TEMPLATE = """
             </div>
             <div id="resetPreview" class="hint mono"></div>
             <div class="safety">
-              <label><input id="ack" type="checkbox"> I understand this sends a write command captured from TigerTool.</label>
+              <label><input id="ack" type="checkbox"> I understand this sends an allowlisted TigerTool-compatible write command.</label>
               <label>Type RESET <input id="resetText" class="mono" autocomplete="off"></label>
               <div class="row">
                 <button id="resetDistance" class="danger">Reset Distance</button>

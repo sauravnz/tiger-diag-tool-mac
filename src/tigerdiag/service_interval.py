@@ -178,7 +178,7 @@ def reset_service_distance(conn: Connection, distance_km: int, log=None) -> bool
     """
     Reset service distance using the TigerTool 11-bit reset command.
 
-    Confirmed by captures:
+    Confirmed by known TigerTool-compatible workflows:
     - 9000 km  -> 33 5A, acknowledged by 704 B3 5A ...
     - 10000 km -> 33 64, acknowledged by 704 B3 64 ...
     """
@@ -229,11 +229,11 @@ def reset_service_interval(conn: Connection, new_interval_km: int) -> bool:
     """
     Generic service reset is intentionally disabled.
 
-    The captured TigerTool reset helpers above send exact allowlisted payloads for
+    The TigerTool-compatible reset helpers above send exact allowlisted payloads for
     this bike. This generic entry point remains a hard stop so callers cannot invent
     or vary write commands without a matching capture.
     """
-    print("Generic service reset is disabled; use an exact captured TigerTool reset helper.")
+    print("Generic service reset is disabled; use an allowlisted TigerTool-compatible reset helper.")
     return False
 
 

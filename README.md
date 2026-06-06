@@ -2,6 +2,8 @@
 
 A macOS diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. It provides a CLI and a lightweight local browser GUI using a BMDiag cable (FTDI FT232R, ELM327 v1.4) connected via USB hub.
 
+TigerDiag is an independent, ground-up Python project inspired by TigerTool and the Triumph Tiger community. It does not include TigerTool source code, binaries, or bundled TigerTool assets.
+
 ## Features
 
 **Currently Working:**
@@ -11,8 +13,8 @@ A macOS diagnostic tool for Triumph Tiger 900 GT Pro motorcycles. It provides a 
 - ✅ Auto-detect BMDiag/FTDI serial ports
 - ✅ List available serial ports
 - ✅ Lightweight local browser GUI
-- ✅ Read odometer through the TigerTool 11-bit live-data path
-- ✅ Captured TigerTool service distance/date reset commands, guarded behind explicit GUI safety confirmations
+- ✅ Read odometer through a TigerTool-compatible 11-bit live-data path
+- ✅ TigerTool-inspired service distance/date reset workflows, guarded behind explicit GUI safety confirmations
 
 **In Development:**
 - 🔄 Live sensor data (RPM, temperature, speed, throttle, gear, fuel level)
@@ -35,6 +37,12 @@ TigerDiag v1.0.0 is the first working MVP for macOS. It provides:
 - explicit reset safety controls and command previews
 - separate start/stop live-data capture
 - no arbitrary raw-command UI or CLI entry point
+
+## Relationship to TigerTool
+
+TigerTool by T800XC is the original community tool that inspired this project. TigerDiag is not affiliated with T800XC, TigerTool, Triumph, or BMDiag. It was designed and built from the ground up as an independent macOS/Python implementation for owners who want to run diagnostics from a Mac.
+
+TigerDiag does not redistribute TigerTool, include TigerTool binaries, include TigerTool source code, or copy TigerTool UI assets. Where this README mentions TigerTool-style or TigerTool-compatible behaviour, it refers to compatibility with known diagnostic workflows, not shared code.
 
 ## Screenshots
 
@@ -153,7 +161,7 @@ http://127.0.0.1:8765/
 
 The GUI has tabs for:
 - **ECU:** read VIN and ECU information
-- **Service:** read service data and run captured TigerTool reset commands
+- **Service:** read service data and run guarded TigerTool-compatible reset workflows
 - **Live:** start/stop a separate live-data capture while the engine is running
 
 When you click **Connect**, the GUI immediately captures a read-only diagnostic snapshot from the bike and stores it as in-memory JSON. The ECU and Service tabs display that cached snapshot. Switching tabs or pressing the "Show Cached..." buttons does not send more commands to the bike.
@@ -179,7 +187,7 @@ The reset buttons require:
 - typing `RESET`
 - a browser confirmation dialog
 
-The GUI previews the exact command before reset. Confirmed examples from TigerTool captures:
+The GUI previews the exact command before reset. Confirmed examples from known TigerTool-compatible workflows:
 
 ```text
 Distance 9000 km:  33 5A
@@ -187,7 +195,7 @@ Distance 10000 km: 33 64
 Date 265 days, due 26/02/27: 5C 1B 02 1A 01 0A
 ```
 
-For reset, the GUI closes the existing diagnostic session, opens a fresh serial connection, sends the captured TigerTool reset sequence, then closes that reset connection. Reconnect afterward to capture a fresh diagnostic snapshot.
+For reset, the GUI closes the existing diagnostic session, opens a fresh serial connection, sends the allowlisted reset sequence, then closes that reset connection. Reconnect afterward to capture a fresh diagnostic snapshot.
 
 ## CLI Usage
 
@@ -311,7 +319,7 @@ The Triumph Tiger 900 GT Pro uses ISO 15765-4 CAN with two main communication ch
 - **Query Commands:**
   - 0D 01: Read odometer (returns km in bytes 3-4)
   - 47 01: Read sensor frame 2 (purpose unknown)
-  - 33 64: Captured TigerTool service distance reset payload, not a read command
+  - 33 64: TigerTool-compatible service distance reset payload, not a read command
 
 ### ISO-TP Multi-Frame Response Format
 
@@ -361,13 +369,13 @@ ATZ → ATE0 → ATH1 → ATV0 → ATL0 → ATCAF0 → ATCFC1 → ATCP18 → ATS
 
 **service_interval.py:** Service interval and instruments module support. Implements:
 - Service interval data reading
-- Exact captured TigerTool reset helpers for distance/date, used only behind GUI safety confirmations
+- Allowlisted TigerTool-compatible reset helpers for distance/date, used only behind GUI safety confirmations
 - Instruments module communication
 
 **gui.py:** Local browser GUI. Implements:
 - Persistent connection shared by all GUI tabs
 - ECU, service, and live-data views
-- Safety gating for captured service reset commands
+- Safety gating for allowlisted service reset commands
 
 **ports.py:** Serial port detection for macOS. Auto-detects FTDI/ELM327 ports.
 
@@ -413,7 +421,7 @@ Please open an issue or contact the maintainers.
 
 ## Disclaimer
 
-This tool communicates with your motorcycle's ECU. It performs read operations by default. Service reset writes are available only through exact captured TigerTool payloads and explicit GUI safety confirmations. Use at your own risk. The author is not responsible for any damage to your bike or its systems.
+This tool communicates with your motorcycle's ECU. It performs read operations by default. Service reset writes are available only through allowlisted TigerTool-compatible payloads and explicit GUI safety confirmations. Use at your own risk. The author is not responsible for any damage to your bike or its systems.
 
 ## License
 
