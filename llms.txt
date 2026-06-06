@@ -1,0 +1,97 @@
+# TigerDiag
+
+> macOS diagnostic CLI and local browser GUI for Triumph Tiger motorcycles, focused on the Tiger 900 GT Pro.
+
+TigerDiag is an open-source diagnostic interoperability project for macOS. It communicates with a Triumph Tiger motorcycle ECU through a BMDiag diagnostic cable using an FTDI FT232R / ELM327 v1.4 serial adapter.
+
+Canonical repository: https://github.com/sauravnz/tiger-diag-tool-mac
+
+## Project Status
+
+Current release: v1.0.0
+
+TigerDiag v1.0.0 is the first working MVP release. It provides read-only diagnostic workflows by default, plus guarded service interval reset workflows using constrained values and explicit confirmations.
+
+## Primary Documentation
+
+- [README](README.md): Installation, screenshots, CLI usage, GUI usage, protocol notes, limitations, and safety disclaimer.
+- [License](LICENSE): MIT License.
+- [Agent Notes](AGENTS.md): Maintainer-oriented implementation notes for future coding agents.
+
+## Key Features
+
+- macOS CLI command: `tigerdiag`
+- local browser GUI command: `tigerdiag-gui`
+- serial port discovery for BMDiag / FTDI adapters
+- connection health check with adapter voltage and ECU reachability
+- VIN and ECU information reads
+- full diagnostic scan summary
+- cached diagnostic snapshot in the GUI after connect
+- service distance reset with constrained kilometre options
+- service date reset with constrained day options
+- explicit reset safety checkbox, typed confirmation, browser confirmation, and command preview
+- separate start/stop live-data capture workflow
+- arbitrary raw-command UI and CLI entry points intentionally removed for safety
+
+## Supported Hardware
+
+- BMDiag cable with FTDI FT232R USB serial adapter
+- ELM327 v1.4 interface
+- Triumph Tiger 900 GT Pro tested
+- macOS tested
+
+Typical serial port placeholder:
+
+```text
+/dev/cu.usbserial-XXXX
+```
+
+## Install
+
+```bash
+git clone https://github.com/sauravnz/tiger-diag-tool-mac.git
+cd tiger-diag-tool-mac
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+## CLI Examples
+
+```bash
+tigerdiag list-ports
+tigerdiag doctor --port /dev/cu.usbserial-XXXX
+tigerdiag vin --port /dev/cu.usbserial-XXXX
+tigerdiag ecu-info --port /dev/cu.usbserial-XXXX
+tigerdiag scan --port /dev/cu.usbserial-XXXX
+tigerdiag service --port /dev/cu.usbserial-XXXX
+tigerdiag live --port /dev/cu.usbserial-XXXX --duration 10
+```
+
+## GUI
+
+```bash
+tigerdiag-gui
+```
+
+Default local URL:
+
+```text
+http://127.0.0.1:8765/
+```
+
+## Safety Notes
+
+TigerDiag communicates with motorcycle control modules. Read-only diagnostics are the default path. Service reset writes are available only through the GUI and are guarded by constrained values and explicit confirmations. Users should understand the risk before using any write workflow.
+
+## Known Limitations
+
+- TES suspension module diagnostics are not yet supported.
+- ABS diagnostics are not yet supported.
+- TPMS diagnostics are not yet supported.
+- Live sensor decoding is still incomplete beyond confirmed odometer data.
+- The tool is currently macOS-focused.
+
+## Useful Search Terms
+
+TigerDiag, Triumph Tiger diagnostic tool, Triumph Tiger 900 GT Pro diagnostics, macOS motorcycle diagnostics, BMDiag cable, FTDI FT232R, ELM327, TigerTool-style service reset, Triumph ECU diagnostics, Tiger 900 service reset.
